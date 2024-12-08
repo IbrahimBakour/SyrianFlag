@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Circle Image with Syrian Flag Frame</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-color: #f3f3f3;
+      }
+
+      h1 {
+        color: #333;
+      }
+
+      #upload-container {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .custom-file-upload {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .custom-file-upload:hover {
+        background-color: #0056b3;
+      }
+
+      #image-preview {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 5px solid transparent;
+        display: none;
+      }
+
+      #make-circle {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        display: none;
+      }
+
+      #make-circle:hover {
+        background-color: #1e7e34;
+      }
+
+      #download {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #ffc107;
+        color: black;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        display: none;
+      }
+
+      #download:hover {
+        background-color: #e0a800;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Circle Image with Syrian Flag Frame</h1>
+    <div id="upload-container">
+      <label for="file-upload" class="custom-file-upload">Upload Image</label>
+      <input type="file" id="file-upload" accept="image/*" />
+    </div>
+    <canvas id="canvas" style="display: none"></canvas>
+    <img id="image-preview" alt="Preview" />
+    <button id="make-circle">Add Syrian Flag Frame</button>
+    <button id="download">Download</button>
+
+    <h2 id="name"></h2>
+
+    <script>
+      const fileInput = document.getElementById("file-upload");
+      const imagePreview = document.getElementById("image-preview");
+      const makeCircleButton = document.getElementById("make-circle");
+      const downloadButton = document.getElementById("download");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const name = document.getElementById("name");
+
+      let uploadedImage = null;
+
+      fileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            uploadedImage = new Image();
+            uploadedImage.onload = () => {
+              // Resize canvas to match image
+              canvas.width = uploadedImage.width;
+              canvas.height = uploadedImage.height;
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(uploadedImage, 0, 0);
+
+              // Show initial preview
+              imagePreview.src = canvas.toDataURL();
+              imagePreview.style.display = "block";
+              makeCircleButton.style.display = "inline-block";
+            };
+            uploadedImage.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      makeCircleButton.addEventListener("click", () => {
+        if (uploadedImage) {
+          const size = Math.min(uploadedImage.width, uploadedImage.height);
+          canvas.width = size;
+          canvas.height = size;
+
+          // Draw image as a circle
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(
+            uploadedImage,
+            (uploadedImage.width - size) / 2,
+            (uploadedImage.height - size) / 2,
+            size,
+            size,
+            0,
+            0,
+            size,
+            size
+          );
+          ctx.restore();
+
+          // Add Syrian flag angular gradient frame
+          const frameThickness = size * 0.1; // Frame thickness: 10% of the image size
+          const radiusOuter = size / 2;
+          const radiusInner = size / 2 - frameThickness;
+
+          // Draw flag colors in angular slices
+          const drawFlagSegment = (startAngle, endAngle, color) => {
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, radiusOuter, startAngle, endAngle);
+            ctx.arc(
+              size / 2,
+              size / 2,
+              radiusInner,
+              endAngle,
+              startAngle,
+              true
+            );
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+          };
+
+          // Colors and angles for the Syrian flag
+          const segments = [
+            { color: "#008000", start: 0, end: Math.PI * (2 / 3) }, // Green (120 degrees)
+            {
+              color: "#FFFFFF",
+              start: Math.PI * (2 / 3),
+              end: Math.PI * (4 / 3),
+            }, // White (120 degrees)
+            { color: "#000000", start: Math.PI * (4 / 3), end: Math.PI * 2 }, // Black (120 degrees)
+          ];
+
+          segments.forEach((segment) => {
+            drawFlagSegment(segment.start, segment.end, segment.color);
+          });
+
+          // Draw red stars in the white segment
+          const drawStar = (
+            cx,
+            cy,
+            spikes,
+            outerRadius,
+            innerRadius,
+            color
+          ) => {
+            let rot = (Math.PI / 2) * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+              x = cx + Math.cos(rot) * outerRadius;
+              y = cy + Math.sin(rot) * outerRadius;
+              ctx.lineTo(x, y);
+              rot += step;
+
+              x = cx + Math.cos(rot) * innerRadius;
+              y = cy + Math.sin(rot) * innerRadius;
+              ctx.lineTo(x, y);
+              rot += step;
+            }
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+          };
+
+          // Coordinates for the stars
+          const starRadius = size * 0.05; // 5% of the image size
+          const innerStarRadius = starRadius / 2;
+
+          // First star in the white segment
+          drawStar(
+            size / 4 - size * 0.2, // Left position within the white section
+            size / 2 - size * 0.1, // Slightly above center
+            5, // 5 points
+            starRadius,
+            innerStarRadius,
+            "#FF0000"
+          );
+
+          // Second star in the white segment
+          drawStar(
+            size / 4 - size * 0.2, // Right position within the white section
+            size / 1 - size * 0.3, // Slightly above center
+            5, // 5 points
+            starRadius,
+            innerStarRadius,
+            "#FF0000"
+          );
+
+          // Update preview and show download button
+          imagePreview.src = canvas.toDataURL();
+          downloadButton.style.display = "inline-block";
+        }
+
+        name.innerHTML = "Instagram: iibr.a77";
+      });
+
+      downloadButton.addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.download = "circle_image_with_syrian_flag_frame.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    </script>
+  </body>
+</html>
